@@ -1,7 +1,9 @@
 package com.vg.poker.controller;
 
+import com.vg.poker.dtos.request.AddPlayerRequestDTO;
+import com.vg.poker.dtos.request.PlayerActionRequestDTO;
+import com.vg.poker.dtos.response.GameStateDTO;
 import com.vg.poker.entity.Game;
-import com.vg.poker.entity.Player;
 import com.vg.poker.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,29 +18,63 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping("/create")
-    public ResponseEntity<Game> createGame(){
+    public ResponseEntity<GameStateDTO> createGame(){
         Game game = gameService.createGame();
-        return ResponseEntity.ok(game);
+        return ResponseEntity.ok(gameService.mapGameToDTO(game));
     }
 
     @PostMapping("/{id}/join")
-    public ResponseEntity<Game> joinGame(@PathVariable String id, @RequestBody Player player) {
-        Optional<Game> game = gameService.addPlayer(id, player);
-        return game.map(ResponseEntity::ok)
+    public ResponseEntity<GameStateDTO> joinGame(@PathVariable String id, @RequestBody AddPlayerRequestDTO playerRequest) {
+        Optional<Game> game = gameService.addPlayer(id, playerRequest);
+        return game.map(gameService::mapGameToDTO)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/deal")
-    public ResponseEntity<Game> dealCards(@PathVariable String id) {
+    public ResponseEntity<GameStateDTO> dealCards(@PathVariable String id) {
         Optional<Game> game = gameService.dealCards(id);
-        return game.map(ResponseEntity::ok)
+        return game.map(gameService::mapGameToDTO)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Player bets
+    @PostMapping("/{id}/bet")
+    public ResponseEntity<GameStateDTO> bet(@PathVariable String id,
+                                            @RequestBody PlayerActionRequestDTO request) {
+        Optional<Game> game = gameService.playerBet(id, request);
+        return game.map(gameService::mapGameToDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Player folds
+    @PostMapping("/{id}/fold")
+    public ResponseEntity<GameStateDTO> fold(@PathVariable String id,
+                                             @RequestBody PlayerActionRequestDTO request) {
+        Optional<Game> game = gameService.playerFold(id, request.getPlayerId());
+        return game.map(gameService::mapGameToDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Reveal community cards
+    @PostMapping("/{id}/community")
+    public ResponseEntity<GameStateDTO> revealCommunity(@PathVariable String id,
+                                                        @RequestParam int count) {
+        Optional<Game> game = gameService.revealCommunityCards(id, count);
+        return game.map(gameService::mapGameToDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+
     @GetMapping("/{id}/state")
-    public ResponseEntity<Game> getGameState(@PathVariable String id) {
+    public ResponseEntity<GameStateDTO> getGameState(@PathVariable String id) {
         Optional<Game> game = gameService.getGameState(id);
-        return game.map(ResponseEntity::ok)
+        return game.map(gameService::mapGameToDTO)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 }
