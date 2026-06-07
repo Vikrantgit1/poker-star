@@ -1,5 +1,7 @@
 package com.vg.poker.entity;
 
+import com.vg.poker.entity.enums.GamePhase;
+import com.vg.poker.entity.enums.HandRank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,9 +20,24 @@ import java.util.List;
 public class Game {
     @Id
     private String id;
+    @Builder.Default
     private List<Player> players = new ArrayList<>();
-    private Deck deck;
+    @Builder.Default
+    private Deck deck = new Deck();
+    @Builder.Default
     private List<Card> communityCards = new ArrayList<>();
+    @Builder.Default
     private int pot = 0;
-    private String status = "WAITING";
+    @Builder.Default
+    private GamePhase status = GamePhase.WAITING;
+    private String currentPlayerId;
+    @Builder.Default
+    private int currentBet = 0;
+    @Builder.Default
+    private int minRaise = 1;
+    @Builder.Default
+    private List<String> winnerPlayerIds = new ArrayList<>();
+    @Builder.Default
+    private List<String> winnerNames = new ArrayList<>();
+    private HandRank winningHandRank;
 }

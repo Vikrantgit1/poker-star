@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +16,14 @@ public class Player {
     @Id
     private String id;
     private String name;
+    @Builder.Default
     private int chips=0;
+    @Builder.Default
     private List<Card> hand = new ArrayList<>();
+    @Builder.Default
     private boolean folded = false;
+    @Builder.Default
+    private int currentRoundBet = 0;
+    @Builder.Default
+    private boolean actedThisRound = false;
 }
