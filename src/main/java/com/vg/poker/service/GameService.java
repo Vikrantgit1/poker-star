@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -69,8 +70,8 @@ public class GameService {
         return gameOptional;
     }
 
-    public Optional<Game> dealCards(String id) {
-        Optional<Game> gameOptional = gameRepository.findById(id);
+    public Optional<Game> dealCards(String gameId) {
+        Optional<Game> gameOptional = gameRepository.findById(gameId);
         gameOptional.ifPresent(
                 game -> {
                     requirePhase(game, GamePhase.WAITING, "Cards can only be dealt from WAITING");
@@ -105,8 +106,8 @@ public class GameService {
         return gameOptional;
     }
 
-    public Optional<Game> getGameState(String id) {
-        return gameRepository.findById(id);
+    public Optional<Game> getGameState(String gameId) {
+        return gameRepository.findById(gameId);
     }
 
     public Optional<Game> playerBet(String gameId, PlayerActionRequestDTO request) {

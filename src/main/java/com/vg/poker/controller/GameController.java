@@ -4,7 +4,6 @@ import com.vg.poker.dtos.request.AddPlayerRequestDTO;
 import com.vg.poker.dtos.request.PlayerActionRequestDTO;
 import com.vg.poker.dtos.response.GameStateDTO;
 import com.vg.poker.entity.Game;
-import com.vg.poker.entity.Player;
 import com.vg.poker.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
