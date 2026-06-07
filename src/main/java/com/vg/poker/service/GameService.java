@@ -1,13 +1,10 @@
 package com.vg.poker.service;
 
-<<<<<<< Updated upstream
-=======
 import com.vg.poker.dtos.request.AddPlayerRequestDTO;
 import com.vg.poker.dtos.request.PlayerActionRequestDTO;
 import com.vg.poker.dtos.response.GameStateDTO;
 import com.vg.poker.dtos.response.PlayerDTO;
 import com.vg.poker.entity.Card;
->>>>>>> Stashed changes
 import com.vg.poker.entity.Deck;
 import com.vg.poker.entity.Game;
 import com.vg.poker.entity.Player;
@@ -22,12 +19,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
-<<<<<<< Updated upstream
-=======
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
->>>>>>> Stashed changes
 import java.util.Optional;
 
 @Service
@@ -56,9 +50,6 @@ public class GameService {
         Optional<Game> gameOptional = gameRepository.findById(id);
         gameOptional.ifPresent(
                 game -> {
-<<<<<<< Updated upstream
-                    game.getPlayers().add(player);
-=======
                     requirePhase(game, GamePhase.WAITING, "Players can only join a waiting game");
                     validatePlayerRequest(playerRequest);
                     if (game.getPlayers().stream().anyMatch(player -> player.getId().equals(playerRequest.getId()))) {
@@ -71,7 +62,6 @@ public class GameService {
                                     .chips(playerRequest.getChips())
                                     .build()
                     );
->>>>>>> Stashed changes
                     gameRepository.save(game);
                 }
         );
@@ -117,8 +107,6 @@ public class GameService {
     public Optional<Game> getGameState(String id) {
         return gameRepository.findById(id);
     }
-<<<<<<< Updated upstream
-=======
 
     public Optional<Game> playerBet(String gameId, PlayerActionRequestDTO request) {
         if (request != null && request.getAction() == null) {
@@ -569,5 +557,4 @@ public class GameService {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
     }
 
->>>>>>> Stashed changes
 }
