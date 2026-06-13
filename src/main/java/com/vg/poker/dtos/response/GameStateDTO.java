@@ -22,4 +22,6 @@ public class GameStateDTO {
     private List<String> winnerPlayerIds;
     private List<String> winnerNames;
     private HandRank winningHandRank;
+    private boolean autoStartNextRound;
+    private java.util.Map<String, Integer> lastRoundWinnings;
 }

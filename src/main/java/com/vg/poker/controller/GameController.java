@@ -94,4 +94,14 @@ public class GameController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+        @PatchMapping("/{id}/autostart")
+        public ResponseEntity<GameStateDTO> setAutoStart(@PathVariable String id,
+                                                                                                         @RequestParam boolean enabled,
+                                                                                                         @RequestParam(required = false) String viewerPlayerId) {
+                Optional<Game> game = gameService.setAutoStartNextRound(id, enabled);
+                return game.map(value -> gameService.mapGameToDTO(value, viewerPlayerId))
+                                .map(ResponseEntity::ok)
+                                .orElse(ResponseEntity.notFound().build());
+        }
 }

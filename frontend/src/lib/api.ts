@@ -91,6 +91,12 @@ export const gameApi = {
   getState(gameId: string, options: RequestOptions = {}) {
     return requestGameState(withViewer(`/game/${gameId}/state`, options.viewerPlayerId));
   },
+
+  setAutoStart(gameId: string, enabled: boolean, options: RequestOptions = {}) {
+    return requestGameState(withViewer(`/game/${gameId}/autostart?enabled=${enabled}`, options.viewerPlayerId), {
+      method: 'PATCH',
+    });
+  },
 };
 
 export const testExports = {

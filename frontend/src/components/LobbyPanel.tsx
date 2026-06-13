@@ -16,6 +16,8 @@ type LobbyPanelProps = {
   onJoinGame: () => void;
   onSelectPlayer: (playerId: string) => void;
   onClearSession: () => void;
+  autoStartNextRound?: boolean;
+  onToggleAutoStart?: (enabled: boolean) => void;
 };
 
 export function LobbyPanel({
@@ -33,6 +35,8 @@ export function LobbyPanel({
   onJoinGame,
   onSelectPlayer,
   onClearSession,
+  autoStartNextRound = true,
+  onToggleAutoStart,
 }: LobbyPanelProps) {
   return (
     <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -117,6 +121,20 @@ export function LobbyPanel({
       </div>
 
       <div className="mt-5 border-t border-slate-200 pt-4">
+        <label className="mb-2 block text-sm font-medium text-slate-700">Table options</label>
+        <div className="flex items-center gap-2">
+          <input
+            id="auto-start"
+            type="checkbox"
+            checked={!!autoStartNextRound}
+            onChange={(e) => onToggleAutoStart && onToggleAutoStart(e.target.checked)}
+            className="h-4 w-4"
+          />
+          <label htmlFor="auto-start" className="text-sm text-slate-700">
+            Auto-start next round
+          </label>
+        </div>
+        
         <p className="mb-2 text-sm font-semibold text-slate-950">Active viewer</p>
         <div className="flex flex-col gap-2">
           {joinedPlayers.length ? (

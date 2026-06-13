@@ -259,6 +259,7 @@ class GameServiceTest {
     private Game gameWithPlayers(GamePhase status, Player... players) {
         return Game.builder()
                 .id("g1")
+                .autoStartNextRound(false)
                 .status(status)
                 .players(new ArrayList<>(List.of(players)))
                 .deck(new Deck())

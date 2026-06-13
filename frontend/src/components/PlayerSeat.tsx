@@ -7,6 +7,8 @@ type PlayerSeatProps = {
   isActiveViewer: boolean;
   isCurrentTurn: boolean;
   isWinner: boolean;
+  lastRoundProfit?: number;
+  isHighlighted?: boolean;
   onSelect: (playerId: string) => void;
 };
 
@@ -15,6 +17,8 @@ export function PlayerSeat({
   isActiveViewer,
   isCurrentTurn,
   isWinner,
+  lastRoundProfit,
+  isHighlighted,
   onSelect,
 }: PlayerSeatProps) {
   return (
@@ -25,7 +29,7 @@ export function PlayerSeat({
         isActiveViewer
           ? 'border-amber-300 bg-amber-50 shadow-md'
           : 'border-white/25 bg-white/12 hover:bg-white/18'
-      } ${player.folded ? 'opacity-60' : ''}`}
+      } ${player.folded ? 'opacity-60' : ''} ${isHighlighted ? 'ring-4 ring-amber-400/60 animate-pulse' : ''}`}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -42,7 +46,7 @@ export function PlayerSeat({
         </div>
         {isWinner && (
           <span className="rounded-full bg-amber-300 px-2 py-1 text-xs font-bold text-slate-950">
-            Winner
+            Winner{typeof lastRoundProfit === 'number' ? ` +${lastRoundProfit}` : ''}
           </span>
         )}
       </div>

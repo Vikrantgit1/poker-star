@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Document(collection = "game")
 @Data
@@ -40,4 +42,8 @@ public class Game {
     @Builder.Default
     private List<String> winnerNames = new ArrayList<>();
     private HandRank winningHandRank;
+    @Builder.Default
+    private boolean autoStartNextRound = true;
+    @Builder.Default
+    private Map<String, Integer> lastRoundWinnings = new HashMap<>();
 }

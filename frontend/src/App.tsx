@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
+import WinnerToast from './components/WinnerToast';
 import { ActionPanel } from './components/ActionPanel';
 import { GameTable } from './components/GameTable';
 import { LobbyPanel } from './components/LobbyPanel';
@@ -22,6 +23,8 @@ export default function App() {
   const [actionAmount, setActionAmount] = useState(10);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState('');
+  const [toastWinners, setToastWinners] = useState<{ name: string; amount: number }[] | null>(null);
+  const [highlightedPlayers, setHighlightedPlayers] = useState<string[]>([]);
 
   useEffect(() => {
     saveSession({ gameId, players: joinedPlayers, activePlayerId });
@@ -39,7 +42,29 @@ export default function App() {
     setError('');
     try {
       const nextGame = await operation();
-      setGame(nextGame);
+      // detect round finish to show winners and highlight players briefly
+      setGame((prev) => {
+        if (nextGame) {
+          if (prev?.status !== 'FINISHED' && nextGame.status === 'FINISHED' && nextGame.winnerPlayerIds?.length) {
+            // prepare toast and highlights
+            const winners = nextGame.winnerPlayerIds.map((id, idx) => ({
+              name: nextGame.winnerNames?.[idx] ?? id,
+              amount: nextGame.lastRoundWinnings?.[id] ?? 0,
+            }));
+            setToastWinners(winners);
+            setHighlightedPlayers(nextGame.winnerPlayerIds);
+            // clear highlight after 4s
+            setTimeout(() => setHighlightedPlayers([]), 4000);
+            // clear toast after 5s
+            setTimeout(() => setToastWinners(null), 5000);
+            // if server is set to auto-start, refresh after short delay to pick up the new round
+            if (nextGame.autoStartNextRound) {
+              setTimeout(() => void refreshGame(), 1400);
+            }
+          }
+        }
+        return nextGame;
+      });
       setGameId(nextGame.gameId);
       return nextGame;
     } catch (caught) {
@@ -154,6 +179,14 @@ export default function App() {
             playerName={playerName}
             startingChips={startingChips}
             isBusy={isBusy}
+            autoStartNextRound={game?.autoStartNextRound}
+            onToggleAutoStart={async (enabled: boolean) => {
+              if (!gameId) return;
+              const next = await run(() => gameApi.setAutoStart(gameId, enabled, { viewerPlayerId: activePlayerId }));
+              if (next) {
+                setGame(next);
+              }
+            }}
             onGameIdChange={setGameId}
             onPlayerNameChange={setPlayerName}
             onStartingChipsChange={setStartingChips}
@@ -164,7 +197,12 @@ export default function App() {
             onClearSession={handleClearSession}
           />
 
-          <GameTable game={game} activePlayerId={activePlayerId} onSelectPlayer={handleSelectPlayer} />
+          <GameTable
+            game={game}
+            activePlayerId={activePlayerId}
+            onSelectPlayer={handleSelectPlayer}
+            highlightedPlayerIds={highlightedPlayers}
+          />
 
           <ActionPanel
             game={game}
@@ -178,6 +216,7 @@ export default function App() {
             onRefresh={() => void refreshGame()}
           />
         </div>
+        {toastWinners && <WinnerToast winners={toastWinners} onClose={() => setToastWinners(null)} />}
       </div>
     </main>
   );

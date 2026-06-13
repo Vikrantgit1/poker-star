@@ -7,9 +7,10 @@ type GameTableProps = {
   game: GameState | null;
   activePlayerId: string;
   onSelectPlayer: (playerId: string) => void;
+  highlightedPlayerIds?: string[];
 };
 
-export function GameTable({ game, activePlayerId, onSelectPlayer }: GameTableProps) {
+export function GameTable({ game, activePlayerId, onSelectPlayer, highlightedPlayerIds }: GameTableProps) {
   if (!game) {
     return (
       <section className="flex min-h-[34rem] items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -65,6 +66,8 @@ export function GameTable({ game, activePlayerId, onSelectPlayer }: GameTablePro
             isActiveViewer={player.playerId === activePlayerId}
             isCurrentTurn={player.playerId === game.currentPlayerId}
             isWinner={game.winnerPlayerIds.includes(player.playerId)}
+            lastRoundProfit={game.lastRoundWinnings?.[player.playerId]}
+            isHighlighted={!!highlightedPlayerIds?.includes(player.playerId)}
             onSelect={onSelectPlayer}
           />
         ))}

@@ -22,7 +22,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -74,7 +75,9 @@ public class GameService {
         Optional<Game> gameOptional = gameRepository.findById(gameId);
         gameOptional.ifPresent(
                 game -> {
-                    requirePhase(game, GamePhase.WAITING, "Cards can only be dealt from WAITING");
+                    if (game.getStatus() != GamePhase.WAITING && game.getStatus() != GamePhase.FINISHED) {
+                        throw badRequest("Cards can only be dealt from WAITING or FINISHED");
+                    }
                     if (game.getPlayers().size() < 2) {
                         throw badRequest("At least two players are required to deal cards");
                     }
@@ -108,6 +111,15 @@ public class GameService {
 
     public Optional<Game> getGameState(String gameId) {
         return gameRepository.findById(gameId);
+    }
+
+    public Optional<Game> setAutoStartNextRound(String gameId, boolean enabled) {
+        Optional<Game> optGame = gameRepository.findById(gameId);
+        optGame.ifPresent(game -> {
+            game.setAutoStartNextRound(enabled);
+            gameRepository.save(game);
+        });
+        return optGame;
     }
 
     public Optional<Game> playerBet(String gameId, PlayerActionRequestDTO request) {
@@ -218,6 +230,8 @@ public class GameService {
         dto.setWinnerPlayerIds(game.getWinnerPlayerIds());
         dto.setWinnerNames(game.getWinnerNames());
         dto.setWinningHandRank(game.getWinningHandRank());
+        dto.setLastRoundWinnings(game.getLastRoundWinnings());
+        dto.setAutoStartNextRound(game.isAutoStartNextRound());
 
         List<PlayerDTO> players = game.getPlayers().stream().map(player -> {
             PlayerDTO pDto = new PlayerDTO();
@@ -479,6 +493,9 @@ public class GameService {
         applyWinners(game, winners, bestScore.getHandRank());
         game.setStatus(GamePhase.FINISHED);
         game.setCurrentPlayerId(null);
+        if (Boolean.TRUE.equals(game.isAutoStartNextRound())) {
+            scheduleAutoStartNextRound(game.getId());
+        }
     }
 
     private List<Card> cardsForShowdown(Player player, Game game) {
@@ -495,6 +512,72 @@ public class GameService {
     private void awardPotToSingleWinner(Game game, Player winner) {
         applyWinners(game, List.of(winner), null);
         game.setStatus(GamePhase.FINISHED);
+        if (Boolean.TRUE.equals(game.isAutoStartNextRound())) {
+            scheduleAutoStartNextRound(game.getId());
+        }
+    }
+
+    private void scheduleAutoStartNextRound(String gameId) {
+        // delay to allow clients to observe FINISHED state before auto-start
+        new Thread(() -> {
+            try {
+                Thread.sleep(1200);
+                Optional<Game> opt = gameRepository.findById(gameId);
+                opt.ifPresent(g -> {
+                    if (Boolean.TRUE.equals(g.isAutoStartNextRound())) {
+                        startNextRoundIfPossible(g);
+                        gameRepository.save(g);
+                    }
+                });
+            } catch (InterruptedException ignored) {
+            }
+        }, "auto-start-" + gameId).start();
+    }
+
+    /**
+     * Prepare and start the next round automatically if at least two players have chips.
+     * Rotation: move the first player to the end of the players list to shift dealer/button.
+     */
+    private void startNextRoundIfPossible(Game game) {
+        List<Player> continuing = game.getPlayers().stream()
+                .filter(p -> p.getChips() > 0)
+                .collect(Collectors.toList());
+        if (continuing.size() < 2) {
+            return;
+        }
+
+        // rotate players to shift dealer/button
+        if (!game.getPlayers().isEmpty()) {
+            Player first = game.getPlayers().remove(0);
+            game.getPlayers().add(first);
+        }
+
+        // prepare new round
+        Deck deck = new Deck();
+        game.setCommunityCards(new ArrayList<>());
+        game.setPot(0);
+        game.setWinningHandRank(null);
+        clearWinners(game);
+
+        for (Player player : game.getPlayers()) {
+            player.setHand(new ArrayList<>());
+            player.setFolded(player.getChips() <= 0);
+            player.setCurrentRoundBet(0);
+            player.setActedThisRound(false);
+        }
+
+        // deal two cards to players with chips
+        for (int i = 0; i < 2; i++) {
+            for (Player player : game.getPlayers()) {
+                if (!player.isFolded()) {
+                    player.getHand().add(deck.draw());
+                }
+            }
+        }
+
+        game.setDeck(deck);
+        game.setStatus(GamePhase.PRE_FLOP);
+        resetBettingRound(game);
     }
 
     private void applyWinners(Game game, List<Player> winners, HandRank winningHandRank) {
@@ -507,12 +590,16 @@ public class GameService {
 
         int split = game.getPot() / winners.size();
         int remainder = game.getPot() % winners.size();
+        Map<String, Integer> payouts = new HashMap<>();
         for (int i = 0; i < winners.size(); i++) {
             Player winner = winners.get(i);
-            winner.setChips(winner.getChips() + split + (i == 0 ? remainder : 0));
+            int award = split + (i == 0 ? remainder : 0);
+            payouts.put(winner.getId(), award);
+            winner.setChips(winner.getChips() + award);
             game.getWinnerPlayerIds().add(winner.getId());
             game.getWinnerNames().add(winner.getName());
         }
+        game.setLastRoundWinnings(payouts);
         game.setPot(0);
         game.setWinningHandRank(winningHandRank);
     }
@@ -520,6 +607,7 @@ public class GameService {
     private void clearWinners(Game game) {
         game.setWinnerPlayerIds(new ArrayList<>());
         game.setWinnerNames(new ArrayList<>());
+        game.setLastRoundWinnings(new HashMap<>());
     }
 
     private boolean shouldRevealHand(Game game, Player player, String viewerPlayerId) {

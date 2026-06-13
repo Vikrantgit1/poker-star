@@ -49,6 +49,8 @@ export type GameState = {
   winnerPlayerIds: string[];
   winnerNames: string[];
   winningHandRank: HandRank | null;
+  autoStartNextRound?: boolean;
+  lastRoundWinnings?: Record<string, number>;
 };
 
 export type JoinedPlayer = {
